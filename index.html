@@ -316,9 +316,9 @@ kbd {
       <div class="chat-log" id="chatLog"></div>
       <div class="quick-qs" id="quickQs">
         <button class="quick-q">这是什么品牌和型号？</button>
-        <button class="quick-q">这个东西大概值多少钱？</button>
-        <button class="quick-q">详细描述一下这张图</button>
-        <button class="quick-q">上面的文字写了什么？</button>
+        <button class="quick-q">在香港哪里可以买到？大概多少钱？</button>
+        <button class="quick-q">上面的文字/logo写了什么？</button>
+        <button class="quick-q">有哪些相似的替代款？</button>
       </div>
       <div class="ask-input-row">
         <input type="text" id="askInput" placeholder="例如：这副眼镜是什么牌子？" enterkeyhint="send">
@@ -333,7 +333,7 @@ kbd {
     <!-- AI 设置面板 -->
     <div class="settings-panel" id="settingsPanel">
       <h3 style="font-size:15px;margin-bottom:2px">⚙️ AI 模型设置</h3>
-      <p class="sub">填入任意支持视觉的 OpenAI 兼容接口，密钥只保存在本机</p>
+      <p class="sub">已内置免费模型，开箱即用。也可换成你自己的 OpenAI 兼容接口（密钥只存本机）</p>
       <label>服务商预设</label>
       <select id="setPreset">
         <option value="zhipu">智谱 GLM（免费推荐）</option>
@@ -530,7 +530,9 @@ const PRESETS = {
   custom:   { url: '', model: '' },
 };
 const AI_LS = 'os_ai_cfg';
-let aiCfg = JSON.parse(localStorage.getItem(AI_LS) || 'null');
+// 内置默认配置：智谱 GLM-4V-Flash（免费视觉模型），用户无需配置即可用；也可在设置里改成自己的
+const DEFAULT_AI_CFG = { preset: 'zhipu', ...PRESETS.zhipu, key: '87df77cd38f542dab356ec5b52747021.BodLhiPloXl1R0Kg' };
+let aiCfg = JSON.parse(localStorage.getItem(AI_LS) || 'null') || DEFAULT_AI_CFG;
 let chatMsgs = []; // 多轮对话上下文
 
 const askPanel = $('askPanel'), settingsPanel = $('settingsPanel'), chatLog = $('chatLog');
@@ -542,7 +544,6 @@ function showPanel(which) { // 'preview' | 'ask' | 'settings'
 }
 
 $('askOpenBtn').onclick = () => {
-  if (!aiCfg || !aiCfg.key) { openSettings(); return; }
   $('askThumb').src = $('previewImg').src;
   showPanel('ask');
   $('askInput').focus();
@@ -551,7 +552,7 @@ $('askBack').onclick = () => showPanel('preview');
 $('askSettings').onclick = openSettings;
 
 function openSettings() {
-  const c = aiCfg || { preset: 'zhipu', ...PRESETS.zhipu, key: '' };
+  const c = aiCfg || DEFAULT_AI_CFG;
   $('setPreset').value = c.preset || 'custom';
   $('setUrl').value = c.url; $('setModel').value = c.model; $('setKey').value = c.key || '';
   showPanel('settings');
@@ -610,7 +611,11 @@ async function sendAsk() {
       body: JSON.stringify({
         model: aiCfg.model,
         messages: [
-          { role: 'system', content: '你是一个善于识别图片中物品的助手。用户会拍摄物品照片并提问，请尽力识别品牌、型号、名称等信息，用中文简洁回答。不确定时给出最可能的几个候选并说明判断依据。' },
+          { role: 'system', content: `你是一个专业的物品识别与购物顾问助手，用户会拍摄物品照片（常见为眼镜、服饰、数码产品等）并提问。请用中文回答，遵循：
+1. 识别品牌与型号：仔细观察 logo、镜腿/标签上的文字、外形特征、材质、配色。能确定就直接给出；不能确定则给出2-3个最可能的候选品牌/型号并说明依据（如"镜腿的金属饰片是XX的标志性设计"）。
+2. 用户问"在哪买"时：优先按用户所在城市回答（若未说明，默认香港）。香港购买眼镜的常见渠道包括：品牌专卖店（如Ray-Ban、Gentle Monster、Oliver Peoples 等在铜锣湾/尖沙咀/中环的门店）、连锁眼镜行（眼镜88、OPTICAL 88、溥仪眼镜 Puyi Optical、Hong Kong Optical、Owndays、JINS）、百货公司专柜（海港城、时代广场、IFC、K11 MUSEA）、以及线上（品牌官网、HKTVmall、Farfetch、Zalora、天猫国际）。请结合识别出的品牌档次推荐最匹配的渠道，并给出大致参考价位（港币）。
+3. 无法看清时，主动告诉用户拍哪个部位（如镜腿内侧型号刻字、logo 特写）能提高识别率。
+回答简洁有条理，用小标题或列表。` },
           ...chatMsgs,
         ],
         max_tokens: 1000,
