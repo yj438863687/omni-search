@@ -1,0 +1,15 @@
+{
+  "name": "OmniSearch 聚合搜索",
+  "short_name": "OmniSearch",
+  "description": "一框搜遍全网，手机电脑都好用的聚合搜索",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1220",
+  "theme_color": "#0f1220",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

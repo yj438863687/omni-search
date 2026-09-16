@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1220">
+<meta name="description" content="OmniSearch - 聚合搜索，一框搜遍全网">
+<title>OmniSearch 聚合搜索</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root {
+  --bg: #f5f6fa;
+  --card: #ffffff;
+  --text: #1a1d29;
+  --text-dim: #6b7080;
+  --accent: #4a6cf7;
+  --accent-soft: #eaefff;
+  --border: #e4e7ef;
+  --shadow: 0 4px 24px rgba(20, 30, 80, .08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1220;
+    --card: #1a1f33;
+    --text: #eef0f8;
+    --text-dim: #8a90a5;
+    --accent: #6d8bff;
+    --accent-soft: #232c4d;
+    --border: #2a3050;
+    --shadow: 0 4px 24px rgba(0, 0, 0, .35);
+  }
+}
+[data-theme="dark"] {
+  --bg: #0f1220; --card: #1a1f33; --text: #eef0f8; --text-dim: #8a90a5;
+  --accent: #6d8bff; --accent-soft: #232c4d; --border: #2a3050;
+  --shadow: 0 4px 24px rgba(0,0,0,.35);
+}
+[data-theme="light"] {
+  --bg: #f5f6fa; --card: #ffffff; --text: #1a1d29; --text-dim: #6b7080;
+  --accent: #4a6cf7; --accent-soft: #eaefff; --border: #e4e7ef;
+  --shadow: 0 4px 24px rgba(20,30,80,.08);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center;
+  transition: background .3s;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.container { width: 100%; max-width: 680px; padding: 0 20px; display: flex; flex-direction: column; align-items: center; }
+/* header */
+.topbar { width: 100%; max-width: 680px; display: flex; justify-content: flex-end; padding: 14px 20px 0; gap: 8px; }
+.icon-btn {
+  background: var(--card); border: 1px solid var(--border); color: var(--text-dim);
+  width: 38px; height: 38px; border-radius: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 17px;
+  transition: transform .15s;
+}
+.icon-btn:active { transform: scale(.92); }
+/* logo */
+.logo { margin-top: clamp(30px, 12vh, 110px); font-size: clamp(30px, 6vw, 42px); font-weight: 800; letter-spacing: -1px; user-select: none; }
+.logo span { color: var(--accent); }
+.slogan { color: var(--text-dim); font-size: 13px; margin-top: 6px; margin-bottom: 26px; }
+/* engine tabs */
+.engines { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 18px; width: 100%; }
+.engine-tab {
+  padding: 7px 15px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text-dim); font-size: 13.5px; cursor: pointer;
+  transition: all .18s; white-space: nowrap; user-select: none;
+}
+.engine-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.engine-tab:not(.active):hover { border-color: var(--accent); color: var(--accent); }
+/* search box */
+.search-wrap { width: 100%; position: relative; }
+.search-box {
+  display: flex; align-items: center; width: 100%;
+  background: var(--card); border: 2px solid var(--border); border-radius: 18px;
+  box-shadow: var(--shadow); transition: border-color .2s; overflow: hidden;
+}
+.search-box:focus-within { border-color: var(--accent); }
+.search-box input {
+  flex: 1; border: none; outline: none; background: transparent; color: var(--text);
+  font-size: 16.5px; padding: 15px 6px 15px 18px; min-width: 0;
+}
+.search-box input::placeholder { color: var(--text-dim); }
+.clear-btn {
+  border: none; background: none; color: var(--text-dim); font-size: 17px;
+  padding: 8px; cursor: pointer; display: none;
+}
+.search-btn {
+  border: none; background: var(--accent); color: #fff; font-size: 15px; font-weight: 600;
+  padding: 0 22px; align-self: stretch; cursor: pointer; transition: filter .15s;
+}
+.search-btn:active { filter: brightness(.88); }
+/* suggestions dropdown */
+.suggest {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30;
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow); overflow: hidden; display: none;
+}
+.suggest.open { display: block; }
+.suggest-item {
+  padding: 12px 18px; font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.suggest-item:last-child { border-bottom: none; }
+.suggest-item:hover, .suggest-item.hl { background: var(--accent-soft); }
+.suggest-item .tag { color: var(--text-dim); font-size: 12px; margin-left: auto; }
+/* multi search */
+.multi-row { margin-top: 16px; display: flex; align-items: center; gap: 8px; color: var(--text-dim); font-size: 13.5px; user-select: none; }
+.multi-row input { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+.multi-row label { cursor: pointer; }
+/* history */
+.history { width: 100%; margin-top: 26px; }
+.history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.history-head h3 { font-size: 13.5px; color: var(--text-dim); font-weight: 600; }
+.history-head button { border: none; background: none; color: var(--text-dim); font-size: 12.5px; cursor: pointer; }
+.history-head button:hover { color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  background: var(--card); border: 1px solid var(--border); border-radius: 999px;
+  padding: 6px 14px; font-size: 13.5px; color: var(--text); cursor: pointer;
+  transition: all .15s; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+/* footer */
+footer { margin-top: auto; padding: 26px 0 20px; color: var(--text-dim); font-size: 12px; text-align: center; }
+kbd {
+  background: var(--card); border: 1px solid var(--border); border-radius: 5px;
+  padding: 1px 6px; font-size: 11px; font-family: inherit;
+}
+@media (max-width: 480px) {
+  .engines { gap: 5px; }
+  .engine-tab { padding: 6px 12px; font-size: 12.5px; }
+  .logo { margin-top: 8vh; }
+  kbd { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="icon-btn" id="themeBtn" title="切换主题">◐</button>
+</div>
+
+<div class="container">
+  <h1 class="logo">Omni<span>Search</span></h1>
+  <p class="slogan">一框搜遍全网 · 手机电脑都好用</p>
+
+  <div class="engines" id="engines"></div>
+
+  <div class="search-wrap">
+    <form class="search-box" id="form">
+      <input type="search" id="q" placeholder="输入关键词搜索…" autocomplete="off" autofocus enterkeyhint="search">
+      <button type="button" class="clear-btn" id="clearBtn" title="清空">✕</button>
+      <button type="submit" class="search-btn">搜索</button>
+    </form>
+    <div class="suggest" id="suggest"></div>
+  </div>
+
+  <div class="multi-row">
+    <input type="checkbox" id="multi">
+    <label for="multi">聚合模式：同时用多个引擎打开搜索结果</label>
+  </div>
+
+  <div class="history" id="historyWrap" style="display:none">
+    <div class="history-head">
+      <h3>搜索历史</h3>
+      <button id="clearHistory">清空</button>
+    </div>
+    <div class="chips" id="historyChips"></div>
+  </div>
+</div>
+
+<footer>
+  <kbd>Tab</kbd> 切换引擎 · <kbd>Enter</kbd> 搜索 &nbsp;|&nbsp; 可"添加到主屏幕"离线使用
+</footer>
+
+<script>
+// ===== 搜索引擎配置 =====
+const ENGINES = [
+  { id: 'baidu',   name: '百度',       url: 'https://www.baidu.com/s?wd=%s' },
+  { id: 'bing',    name: '必应',       url: 'https://www.bing.com/search?q=%s' },
+  { id: 'google',  name: 'Google',    url: 'https://www.google.com/search?q=%s' },
+  { id: 'ddg',     name: 'DuckDuckGo',url: 'https://duckduckgo.com/?q=%s' },
+  { id: 'zhihu',   name: '知乎',       url: 'https://www.zhihu.com/search?type=content&q=%s' },
+  { id: 'bili',    name: 'B站',       url: 'https://search.bilibili.com/all?keyword=%s' },
+  { id: 'github',  name: 'GitHub',    url: 'https://github.com/search?q=%s' },
+  { id: 'taobao',  name: '淘宝',       url: 'https://s.taobao.com/search?q=%s' },
+];
+const LS = { engine: 'os_engine', history: 'os_history', theme: 'os_theme', multi: 'os_multi' };
+
+let currentEngine = localStorage.getItem(LS.engine) || 'baidu';
+let history = JSON.parse(localStorage.getItem(LS.history) || '[]');
+let hlIndex = -1;
+
+const $ = id => document.getElementById(id);
+const enginesEl = $('engines'), input = $('q'), suggestEl = $('suggest');
+
+// ===== 引擎标签 =====
+function renderEngines() {
+  enginesEl.innerHTML = '';
+  ENGINES.forEach(e => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'engine-tab' + (e.id === currentEngine ? ' active' : '');
+    b.textContent = e.name;
+    b.onclick = () => { currentEngine = e.id; localStorage.setItem(LS.engine, e.id); renderEngines(); input.focus(); };
+    enginesEl.appendChild(b);
+  });
+}
+
+// ===== 搜索 =====
+function doSearch(kw) {
+  kw = (kw ?? input.value).trim();
+  if (!kw) return;
+  saveHistory(kw);
+  const enc = encodeURIComponent(kw);
+  if ($('multi').checked) {
+    // 聚合模式：打开多个引擎（浏览器可能拦截弹窗，需用户允许）
+    ['baidu', 'bing', 'google'].forEach((id, i) => {
+      const e = ENGINES.find(x => x.id === id);
+      setTimeout(() => window.open(e.url.replace('%s', enc), '_blank'), i * 120);
+    });
+  } else {
+    const e = ENGINES.find(x => x.id === currentEngine);
+    window.open(e.url.replace('%s', enc), '_blank');
+  }
+  closeSuggest();
+}
+
+$('form').addEventListener('submit', ev => { ev.preventDefault(); doSearch(); });
+
+// ===== 历史记录 =====
+function saveHistory(kw) {
+  history = [kw, ...history.filter(h => h !== kw)].slice(0, 12);
+  localStorage.setItem(LS.history, JSON.stringify(history));
+  renderHistory();
+}
+function renderHistory() {
+  const wrap = $('historyWrap'), chips = $('historyChips');
+  if (!history.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  chips.innerHTML = '';
+  history.forEach(h => {
+    const c = document.createElement('button');
+    c.className = 'chip'; c.textContent = h; c.title = h;
+    c.onclick = () => { input.value = h; doSearch(h); };
+    chips.appendChild(c);
+  });
+}
+$('clearHistory').onclick = () => { history = []; localStorage.removeItem(LS.history); renderHistory(); };
+
+// ===== 搜索建议（百度 JSONP，失败时降级为历史匹配）=====
+let suggestTimer;
+input.addEventListener('input', () => {
+  $('clearBtn').style.display = input.value ? 'block' : 'none';
+  clearTimeout(suggestTimer);
+  const kw = input.value.trim();
+  if (!kw) { closeSuggest(); return; }
+  suggestTimer = setTimeout(() => fetchSuggest(kw), 180);
+});
+
+function fetchSuggest(kw) {
+  const cb = 'osSug_' + Date.now();
+  const script = document.createElement('script');
+  let done = false;
+  window[cb] = data => {
+    done = true;
+    const list = (data && data.s) ? data.s.slice(0, 8) : [];
+    showSuggest(list, kw);
+    cleanup();
+  };
+  script.src = `https://suggestion.baidu.com/su?wd=${encodeURIComponent(kw)}&cb=${cb}`;
+  script.onerror = () => { fallbackSuggest(kw); cleanup(); };
+  document.body.appendChild(script);
+  setTimeout(() => { if (!done) { fallbackSuggest(kw); cleanup(); } }, 1500);
+  function cleanup() { delete window[cb]; script.remove(); }
+}
+function fallbackSuggest(kw) {
+  showSuggest(history.filter(h => h.includes(kw)).slice(0, 6), kw, true);
+}
+function showSuggest(list, kw, isHistory) {
+  if (!list.length || input.value.trim() !== kw) { closeSuggest(); return; }
+  hlIndex = -1;
+  suggestEl.innerHTML = '';
+  list.forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'suggest-item';
+    d.innerHTML = `<span>🔍</span><span></span>` + (isHistory ? `<span class="tag">历史</span>` : '');
+    d.children[1].textContent = s;
+    d.onmousedown = ev => { ev.preventDefault(); input.value = s; doSearch(s); };
+    suggestEl.appendChild(d);
+  });
+  suggestEl.classList.add('open');
+}
+function closeSuggest() { suggestEl.classList.remove('open'); hlIndex = -1; }
+document.addEventListener('click', ev => { if (!ev.target.closest('.search-wrap')) closeSuggest(); });
+
+// 键盘上下选择建议
+input.addEventListener('keydown', ev => {
+  const items = suggestEl.querySelectorAll('.suggest-item');
+  if (!items.length) return;
+  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+    ev.preventDefault();
+    hlIndex = ev.key === 'ArrowDown'
+      ? (hlIndex + 1) % items.length
+      : (hlIndex - 1 + items.length) % items.length;
+    items.forEach((it, i) => it.classList.toggle('hl', i === hlIndex));
+    input.value = items[hlIndex].children[1].textContent;
+  } else if (ev.key === 'Escape') closeSuggest();
+});
+
+// Tab 切换引擎
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Tab' && document.activeElement === input) {
+    ev.preventDefault();
+    const idx = ENGINES.findIndex(e => e.id === currentEngine);
+    currentEngine = ENGINES[(idx + (ev.shiftKey ? -1 : 1) + ENGINES.length) % ENGINES.length].id;
+    localStorage.setItem(LS.engine, currentEngine);
+    renderEngines();
+  }
+});
+
+// 清空按钮
+$('clearBtn').onclick = () => { input.value = ''; $('clearBtn').style.display = 'none'; closeSuggest(); input.focus(); };
+
+// ===== 主题切换 =====
+const themeBtn = $('themeBtn');
+function applyTheme(t) {
+  if (t) document.documentElement.setAttribute('data-theme', t);
+  else document.documentElement.removeAttribute('data-theme');
+}
+applyTheme(localStorage.getItem(LS.theme));
+themeBtn.onclick = () => {
+  const cur = localStorage.getItem(LS.theme);
+  const next = cur === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(LS.theme, next);
+  applyTheme(next);
+};
+
+// 聚合模式记忆
+$('multi').checked = localStorage.getItem(LS.multi) === '1';
+$('multi').onchange = ev => localStorage.setItem(LS.multi, ev.target.checked ? '1' : '0');
+
+renderEngines();
+renderHistory();
+
+// ===== PWA =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
