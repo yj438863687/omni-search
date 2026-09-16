@@ -336,8 +336,8 @@ kbd {
       <p class="sub">填入任意支持视觉的 OpenAI 兼容接口，密钥只保存在本机</p>
       <label>服务商预设</label>
       <select id="setPreset">
-        <option value="qwen">阿里通义千问（国内推荐）</option>
-        <option value="zhipu">智谱 GLM</option>
+        <option value="zhipu">智谱 GLM（免费推荐）</option>
+        <option value="qwen">阿里通义千问</option>
         <option value="moonshot">月之暗面 Kimi</option>
         <option value="openai">OpenAI</option>
         <option value="custom">自定义</option>
@@ -551,7 +551,7 @@ $('askBack').onclick = () => showPanel('preview');
 $('askSettings').onclick = openSettings;
 
 function openSettings() {
-  const c = aiCfg || { preset: 'qwen', ...PRESETS.qwen, key: '' };
+  const c = aiCfg || { preset: 'zhipu', ...PRESETS.zhipu, key: '' };
   $('setPreset').value = c.preset || 'custom';
   $('setUrl').value = c.url; $('setModel').value = c.model; $('setKey').value = c.key || '';
   showPanel('settings');
