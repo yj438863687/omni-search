@@ -193,6 +193,7 @@ body {
 .msg { max-width: 88%; padding: 9px 13px; border-radius: 14px; font-size: 14px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
 .msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
 .msg.ai { align-self: flex-start; background: var(--bg); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.msg.ai:has(.prod-box) { max-width: 100%; width: 100%; }
 .msg.err { align-self: flex-start; background: #fdecec; color: #c0392b; border: 1px solid #f5c6c6; font-size: 13px; }
 [data-theme="dark"] .msg.err { background: #3a2020; border-color: #5c2e2e; color: #ff9a8a; }
 .quick-qs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -200,6 +201,10 @@ body {
 .prod-box { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
 .prod-row { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 9px 11px; }
 .prod-name { font-weight: 700; font-size: 13.5px; margin-bottom: 7px; }
+.prod-thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+.prod-thumb { display: block; aspect-ratio: 1; border-radius: 9px; overflow: hidden; background: var(--bg); border: 1px solid var(--border); }
+.prod-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s; }
+.prod-thumb:hover img { transform: scale(1.06); }
 .prod-links { display: flex; flex-wrap: wrap; gap: 6px; }
 .prod-links a {
   text-decoration: none; font-size: 12px; padding: 5px 10px; border-radius: 999px;
@@ -675,11 +680,16 @@ function renderAiAnswer(div, answer) {
     const enc = encodeURIComponent(p);
     const row = document.createElement('div');
     row.className = 'prod-row';
+    // 直接在聊天里显示同款缩略图（来自必应图片，点击可看大图搜索）
+    const thumbs = [0, 1, 2, 3].map(i =>
+      `<a href="https://www.bing.com/images/search?q=${enc}" target="_blank" class="prod-thumb">
+         <img src="https://tse2.mm.bing.net/th?q=${enc}&w=220&h=220&c=7&rs=1&p=${i}&pid=1.7&mkt=zh-HK&adlt=moderate" loading="lazy" alt="${escapeHtml(p)}" onerror="this.parentNode.style.display='none'">
+       </a>`).join('');
     row.innerHTML = `
       <div class="prod-name">🏷️ ${escapeHtml(p)}</div>
+      <div class="prod-thumbs">${thumbs}</div>
       <div class="prod-links">
-        <a href="https://www.bing.com/images/search?q=${enc}" target="_blank">🖼️ 看图片</a>
-        <a href="https://www.google.com/search?tbm=isch&q=${enc}" target="_blank">🖼️ Google图</a>
+        <a href="https://www.bing.com/images/search?q=${enc}" target="_blank">🖼️ 更多图片</a>
         <a href="https://www.google.com/search?tbm=shop&q=${enc}&gl=hk&hl=zh-HK" target="_blank">🛒 Google购物</a>
         <a href="https://www.hktvmall.com/hktv/zh/search_a?keyword=${enc}" target="_blank">🛒 HKTVmall</a>
         <a href="https://www.farfetch.com/hk/shopping/search/items.aspx?q=${enc}" target="_blank">🛒 Farfetch</a>
