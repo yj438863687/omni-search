@@ -1,5 +1,5 @@
 // OmniSearch Service Worker - 缓存壳资源，实现离线可打开
-const CACHE = 'omnisearch-v2';
+const CACHE = 'omnisearch-v3';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

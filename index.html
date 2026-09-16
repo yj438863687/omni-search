@@ -175,6 +175,57 @@ body {
 .eng-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .eng-btn small { display: block; font-weight: 400; font-size: 11px; color: inherit; opacity: .75; margin-top: 3px; }
 .retake { margin-top: 12px; border: none; background: none; color: var(--text-dim); font-size: 13px; cursor: pointer; text-decoration: underline; }
+/* AI ask panel */
+.ask-btn-row { margin-bottom: 10px; }
+.ask-open-btn {
+  width: 100%; padding: 13px; border-radius: 13px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #4a6cf7, #7b4af7); color: #fff; font-size: 14.5px; font-weight: 700;
+}
+.ask-panel { display: none; text-align: left; }
+.ask-panel.open { display: block; }
+.ask-thumb { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ask-thumb img { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); }
+.ask-thumb .t { font-size: 13px; color: var(--text-dim); }
+.chat-log {
+  max-height: 34vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 10px; padding: 2px;
+}
+.msg { max-width: 88%; padding: 9px 13px; border-radius: 14px; font-size: 14px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+.msg.ai { align-self: flex-start; background: var(--bg); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.msg.err { align-self: flex-start; background: #fdecec; color: #c0392b; border: 1px solid #f5c6c6; font-size: 13px; }
+[data-theme="dark"] .msg.err { background: #3a2020; border-color: #5c2e2e; color: #ff9a8a; }
+.quick-qs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.quick-q {
+  border: 1px solid var(--border); background: var(--bg); color: var(--text-dim);
+  border-radius: 999px; padding: 5px 11px; font-size: 12px; cursor: pointer;
+}
+.quick-q:hover { color: var(--accent); border-color: var(--accent); }
+.ask-input-row { display: flex; gap: 8px; }
+.ask-input-row input {
+  flex: 1; border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 13px;
+  font-size: 14.5px; background: var(--bg); color: var(--text); outline: none; min-width: 0;
+}
+.ask-input-row input:focus { border-color: var(--accent); }
+.ask-send {
+  border: none; background: var(--accent); color: #fff; border-radius: 12px;
+  padding: 0 18px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.ask-send:disabled { opacity: .5; cursor: default; }
+.ask-foot { display: flex; justify-content: space-between; margin-top: 10px; }
+.ask-foot button { border: none; background: none; color: var(--text-dim); font-size: 12.5px; cursor: pointer; text-decoration: underline; }
+/* settings */
+.settings-panel { display: none; }
+.settings-panel.open { display: block; }
+.settings-panel label { display: block; font-size: 12.5px; color: var(--text-dim); margin: 10px 0 4px; }
+.settings-panel input, .settings-panel select {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px;
+  font-size: 14px; background: var(--bg); color: var(--text); outline: none;
+}
+.settings-panel input:focus { border-color: var(--accent); }
+.settings-save { margin-top: 14px; width: 100%; padding: 12px; border: none; border-radius: 12px; background: var(--accent); color: #fff; font-size: 14.5px; font-weight: 600; cursor: pointer; }
+.hint { font-size: 12px; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
+.hint a { color: var(--accent); }
 /* footer */
 footer { margin-top: auto; padding: 26px 0 20px; color: var(--text-dim); font-size: 12px; text-align: center; }
 kbd {
@@ -244,6 +295,9 @@ kbd {
 
     <div class="preview-wrap" id="previewWrap">
       <img id="previewImg" alt="预览">
+      <div class="ask-btn-row">
+        <button class="ask-open-btn" id="askOpenBtn">💬 对这张图提问（AI 识别品牌型号）</button>
+      </div>
       <div class="engine-grid">
         <button class="eng-btn primary" data-eng="google">Google 识图<small>找同款最强 · 需外网</small></button>
         <button class="eng-btn" data-eng="bing">必应识图<small>国内可用 · 可购物比价</small></button>
@@ -251,6 +305,51 @@ kbd {
         <button class="eng-btn" data-eng="baidu">百度识图<small>打开后粘贴/选择图片</small></button>
       </div>
       <button class="retake" id="retakeBtn">重新选择图片</button>
+    </div>
+
+    <!-- AI 图片问答面板 -->
+    <div class="ask-panel" id="askPanel">
+      <div class="ask-thumb">
+        <img id="askThumb" alt="">
+        <div class="t">对这张图片提问，AI 会告诉你它看到了什么</div>
+      </div>
+      <div class="chat-log" id="chatLog"></div>
+      <div class="quick-qs" id="quickQs">
+        <button class="quick-q">这是什么品牌和型号？</button>
+        <button class="quick-q">这个东西大概值多少钱？</button>
+        <button class="quick-q">详细描述一下这张图</button>
+        <button class="quick-q">上面的文字写了什么？</button>
+      </div>
+      <div class="ask-input-row">
+        <input type="text" id="askInput" placeholder="例如：这副眼镜是什么牌子？" enterkeyhint="send">
+        <button class="ask-send" id="askSend">发送</button>
+      </div>
+      <div class="ask-foot">
+        <button id="askBack">← 返回识图</button>
+        <button id="askSettings">⚙️ AI 设置</button>
+      </div>
+    </div>
+
+    <!-- AI 设置面板 -->
+    <div class="settings-panel" id="settingsPanel">
+      <h3 style="font-size:15px;margin-bottom:2px">⚙️ AI 模型设置</h3>
+      <p class="sub">填入任意支持视觉的 OpenAI 兼容接口，密钥只保存在本机</p>
+      <label>服务商预设</label>
+      <select id="setPreset">
+        <option value="qwen">阿里通义千问（国内推荐）</option>
+        <option value="zhipu">智谱 GLM</option>
+        <option value="moonshot">月之暗面 Kimi</option>
+        <option value="openai">OpenAI</option>
+        <option value="custom">自定义</option>
+      </select>
+      <label>API 地址</label>
+      <input type="text" id="setUrl" placeholder="https://.../v1/chat/completions">
+      <label>模型名</label>
+      <input type="text" id="setModel" placeholder="qwen-vl-plus">
+      <label>API Key</label>
+      <input type="password" id="setKey" placeholder="sk-...">
+      <button class="settings-save" id="setSave">保存</button>
+      <p class="hint">获取免费/低价 Key：通义千问 → <a href="https://bailian.console.aliyun.com" target="_blank">阿里云百炼</a>（新用户有免费额度）；智谱 → <a href="https://open.bigmodel.cn" target="_blank">open.bigmodel.cn</a>（GLM-4V-Flash 免费）</p>
     </div>
   </div>
 </div>
@@ -422,6 +521,122 @@ themeBtn.onclick = () => {
 $('multi').checked = localStorage.getItem(LS.multi) === '1';
 $('multi').onchange = ev => localStorage.setItem(LS.multi, ev.target.checked ? '1' : '0');
 
+// ===== AI 图片问答 =====
+const PRESETS = {
+  qwen:     { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model: 'qwen-vl-plus' },
+  zhipu:    { url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',              model: 'glm-4v-flash' },
+  moonshot: { url: 'https://api.moonshot.cn/v1/chat/completions',                        model: 'moonshot-v1-8k-vision-preview' },
+  openai:   { url: 'https://api.openai.com/v1/chat/completions',                         model: 'gpt-4o-mini' },
+  custom:   { url: '', model: '' },
+};
+const AI_LS = 'os_ai_cfg';
+let aiCfg = JSON.parse(localStorage.getItem(AI_LS) || 'null');
+let chatMsgs = []; // 多轮对话上下文
+
+const askPanel = $('askPanel'), settingsPanel = $('settingsPanel'), chatLog = $('chatLog');
+
+function showPanel(which) { // 'preview' | 'ask' | 'settings'
+  $('previewWrap').style.display = which === 'preview' ? 'block' : 'none';
+  askPanel.classList.toggle('open', which === 'ask');
+  settingsPanel.classList.toggle('open', which === 'settings');
+}
+
+$('askOpenBtn').onclick = () => {
+  if (!aiCfg || !aiCfg.key) { openSettings(); return; }
+  $('askThumb').src = $('previewImg').src;
+  showPanel('ask');
+  $('askInput').focus();
+};
+$('askBack').onclick = () => showPanel('preview');
+$('askSettings').onclick = openSettings;
+
+function openSettings() {
+  const c = aiCfg || { preset: 'qwen', ...PRESETS.qwen, key: '' };
+  $('setPreset').value = c.preset || 'custom';
+  $('setUrl').value = c.url; $('setModel').value = c.model; $('setKey').value = c.key || '';
+  showPanel('settings');
+}
+$('setPreset').onchange = ev => {
+  const p = PRESETS[ev.target.value];
+  if (p.url) { $('setUrl').value = p.url; $('setModel').value = p.model; }
+};
+$('setSave').onclick = () => {
+  aiCfg = {
+    preset: $('setPreset').value,
+    url: $('setUrl').value.trim(),
+    model: $('setModel').value.trim(),
+    key: $('setKey').value.trim(),
+  };
+  if (!aiCfg.url || !aiCfg.model || !aiCfg.key) { alert('请填写完整：API地址、模型名、Key'); return; }
+  localStorage.setItem(AI_LS, JSON.stringify(aiCfg));
+  $('askThumb').src = $('previewImg').src;
+  showPanel('ask');
+};
+
+// 快捷问题
+document.querySelectorAll('.quick-q').forEach(b => {
+  b.onclick = () => { $('askInput').value = b.textContent; sendAsk(); };
+});
+$('askSend').onclick = sendAsk;
+$('askInput').addEventListener('keydown', ev => { if (ev.key === 'Enter') sendAsk(); });
+
+function addMsg(cls, text) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.textContent = text;
+  chatLog.appendChild(d);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  return d;
+}
+
+async function sendAsk() {
+  const q = $('askInput').value.trim();
+  if (!q || !pickedB64) return;
+  $('askInput').value = '';
+  $('askSend').disabled = true;
+  addMsg('user', q);
+  const aiDiv = addMsg('ai', '思考中…');
+
+  // 构造消息：第一轮带图片，后续轮次带上下文
+  const userContent = chatMsgs.length === 0
+    ? [{ type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + pickedB64 } }, { type: 'text', text: q }]
+    : [{ type: 'text', text: q }];
+  chatMsgs.push({ role: 'user', content: userContent });
+
+  try {
+    const res = await fetch(aiCfg.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + aiCfg.key },
+      body: JSON.stringify({
+        model: aiCfg.model,
+        messages: [
+          { role: 'system', content: '你是一个善于识别图片中物品的助手。用户会拍摄物品照片并提问，请尽力识别品牌、型号、名称等信息，用中文简洁回答。不确定时给出最可能的几个候选并说明判断依据。' },
+          ...chatMsgs,
+        ],
+        max_tokens: 1000,
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    const answer = data.choices?.[0]?.message?.content || '（模型未返回内容）';
+    aiDiv.textContent = answer;
+    chatMsgs.push({ role: 'assistant', content: answer });
+  } catch (e) {
+    chatMsgs.pop(); // 失败回滚，避免污染上下文
+    aiDiv.className = 'msg err';
+    aiDiv.textContent = '请求失败：' + e.message + '\n\n可能原因：Key错误 / 余额不足 / 该服务不允许浏览器直连(CORS)。可到 ⚙️AI设置 换一家服务商（推荐智谱GLM-4V-Flash，免费且支持浏览器直连）。';
+  } finally {
+    $('askSend').disabled = false;
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+}
+
+// 换图/关弹窗时清空对话
+function resetChat() { chatMsgs = []; chatLog.innerHTML = ''; }
+
 // ===== 拍照识图搜同款 =====
 const imgMask = $('imgMask');
 let pickedFile = null, pickedB64 = null;
@@ -437,7 +652,10 @@ function resetPick() {
   pickedFile = pickedB64 = null;
   $('pickRow').style.display = 'flex';
   $('previewWrap').style.display = 'none';
+  askPanel.classList.remove('open');
+  settingsPanel.classList.remove('open');
   $('fileCamera').value = $('fileAlbum').value = '';
+  resetChat();
 }
 $('retakeBtn').onclick = resetPick;
 
